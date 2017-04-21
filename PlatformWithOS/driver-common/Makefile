@@ -34,9 +34,6 @@ LDFLAGS += -lrt
 RM = rm -f
 MKDIR = mkdir -p
 
-UNAME_r := $(shell uname -r)
-IS_ARCH := $(if $(findstring ARCH,${UNAME_r}),YES,NO)
-
 LINUX_MAJOR_VERSION := $(shell uname -r |cut -d '.' -f 1)
 
 VPATH = .:${PLATFORM}/linux-${LINUX_MAJOR_VERSION}:${PLATFORM}:${EPD_DIR}
@@ -54,18 +51,23 @@ check-compiled:
 
 # install binary driver ans associated config/startup or service files
 .PHONY: install
-install: check-compiled | $(DESTDIR)$(SBINDIR) ${DESTDIR}${SYSCONFDIR}/default servicedirectories
+install: check-compiled
+	[ ! -d "${DESTDIR}${SBINDIR}" ] && mkdir -p "${DESTDIR}${SBINDIR}" || true
 	install --group=root --mode=750 --owner=root epd_fuse "${DESTDIR}${SBINDIR}"
+	[ ! -d "${DESTDIR}${SYSCONFDIR}/default" ] && mkdir -p "${DESTDIR}${SYSCONFDIR}/default" || true
 	[ -e "${DESTDIR}${SYSCONFDIR}/default/epd-fuse" ] || install --group=root --mode=644 --owner=root epd-fuse.default "${DESTDIR}${SYSCONFDIR}/default/epd-fuse"
 ifeq (systemd,${SERVICE})
+	[ ! -d "${DESTDIR}${LIBDIR}/systemd/system" ] && mkdir -p "${DESTDIR}${LIBDIR}/systemd/system" || true
 	install --group=root --mode=644 --owner=root epd-fuse.service "${DESTDIR}${LIBDIR}/systemd/system/epd-fuse.service"
 else # otherwise Debian
 	if [ -e "${EPD_FUSE_CONF}" ] ; \
 	then \
+	  [ ! -d "${DESTDIR}${SYSCONFDIR}/init" ] && mkdir -p "${DESTDIR}${SYSCONFDIR}/init" || true ; \
 	  install --group=root --mode=644 --owner=root "${EPD_FUSE_CONF}" "${DESTDIR}${SYSCONFDIR}/init" ; \
 	fi
 	if [ -e "${EPD_FUSE_SH}" ] ; \
 	then \
+	  [ ! -d "${DESTDIR}${SYSCONFDIR}/init.d" ] && mkdir -p "${DESTDIR}${SYSCONFDIR}/init.d" || true ; \
 	  install --group=root --mode=755 --owner=root "${EPD_FUSE_SH}" "${DESTDIR}${SYSCONFDIR}/init.d/epd-fuse" ; \
 	fi
 endif
